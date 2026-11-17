@@ -13,7 +13,7 @@
 constexpr size_t N_THREADS = 5;
 constexpr size_t N_SEMAPHORES = 3;
 
-static std::uniform_int_distribution<int> dist;
+static std::uniform_int_distribution<> dist;
 using P = decltype(dist)::param_type;
 
 static int roll(std::mt19937& rng, int n) {
