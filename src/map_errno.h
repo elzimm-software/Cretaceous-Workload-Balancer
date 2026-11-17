@@ -3,6 +3,10 @@
 
 #include <system_error>
 
+namespace map_errno {
+
 std::system_error map_errno(int errno_);
 
-#endif // ERROR_H_
+}  // namespace map_errno
+
+#endif  // ERROR_H_

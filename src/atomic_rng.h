@@ -1,10 +1,12 @@
 #ifndef ATOMIC_RNG_H_
 #define ATOMIC_RNG_H_
 
-#include <mutex>
-#include <vector>
-#include <random>
 #include <memory>
+#include <mutex>
+#include <random>
+#include <vector>
+
+namespace atomic_rng {
 
 class AtomicRng {
  private:
@@ -13,7 +15,8 @@ class AtomicRng {
     std::mt19937 gen{std::random_device{}()};
   };
 
-  std::shared_ptr<shared_state_t> shared_state = std::make_shared<shared_state_t>();
+  std::shared_ptr<shared_state_t> shared_state =
+      std::make_shared<shared_state_t>();
 
   int unlocked_rand(int min, int max);
   std::vector<size_t> shuffle_indices(size_t len, size_t n);
@@ -31,5 +34,6 @@ class AtomicRng {
   }
 };
 
+}  // namespace atomic_rng
 
-#endif // ATOMIC_RNG_H_
+#endif  // ATOMIC_RNG_H_
