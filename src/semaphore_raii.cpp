@@ -6,13 +6,11 @@
 
 namespace semaphore_raii {
 
-Semaphore_RAII::Semaphore_RAII(int id) : sem(std::make_shared<sem_t>()), id_(id) {
+Semaphore_RAII::Semaphore_RAII(int id) : sem(new sem_t, [] (sem_t* s) {sem_destroy(s); delete s;}), id_(id) {
   if (sem_init(sem.get(), 0, 1) != 0) {
     throw map_errno::map_errno(errno);
   }
 }
-
-Semaphore_RAII::~Semaphore_RAII() { sem_destroy(sem.get()); }
 
 void Semaphore_RAII::wait() {
   if (sem_wait(sem.get()) != 0) {

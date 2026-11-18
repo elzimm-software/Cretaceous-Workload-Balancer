@@ -17,7 +17,6 @@ class Semaphore_RAII {
   enum WaitResult { AQUIRED, NOT_AQUIRED };
 
   Semaphore_RAII(int id);
-  ~Semaphore_RAII();
 
   void wait();
   WaitResult try_wait();

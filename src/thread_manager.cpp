@@ -9,6 +9,8 @@
 #include "pthread_raii.h"
 #include "semaphore_raii.h"
 
+#define THREAD_MANAGER_DO_SLEEP
+#define THREAD_MANAGER_TERSE_LOGS
 namespace thread_manager {
 
 constexpr int INITIAL_WORK = 10;
@@ -20,7 +22,7 @@ ThreadManager::ThreadManager(int n_threads, int n_semaphores)
       std::views::iota(0, n_semaphores) | std::views::transform([](int i) {
         return semaphore_raii::Semaphore_RAII{i};
       }),
-      semaphores.begin());
+      std::back_inserter(semaphores));
 }
 
 int ThreadManager::run() {
@@ -36,31 +38,57 @@ int ThreadManager::run() {
   return 0;
 }
 
-ThreadManager::Thread::Thread(char id, int initial_work,
-                              std::vector<semaphore_raii::Semaphore_RAII> sems,
-                              atomic_rng::AtomicRng rng)
-    : id(id), sems(sems), rng(rng), work(initial_work) {}
+void ThreadManager::Thread::post_all(
+    std::vector<semaphore_raii::Semaphore_RAII>& sems) {
+  for (auto& s : sems) {
+    post_sem(s);
+  }
+}
 
-static void sleep(char id, atomic_rng::AtomicRng rng) {
+void ThreadManager::Thread::sleep_rand() {
 #ifdef THREAD_MANAGER_DO_SLEEP
   constexpr int MILLIS = 1000000;
   const timespec duration = {.tv_sec = 0,
                              .tv_nsec = rng.rand_in_range(0, 10) * MILLIS};
+#ifndef THREAD_MANAGER_TERSE_LOGS
   std::osyncstream(std::cout)
       << id << " sleeping for " << duration.tv_nsec << "\n";
+#endif
   nanosleep(&duration, nullptr);
 #else
   return;  // if not defined just no-op the function
 #endif
 }
 
-static void post_all(char id,
-                     std::vector<semaphore_raii::Semaphore_RAII>& sems) {
-  for (auto& s : sems) {
-    s.post();
-    std::osyncstream(std::cout) << id << " released " << s.id() << "\n";
+bool ThreadManager::Thread::take_sem(semaphore_raii::Semaphore_RAII s) {
+  if (s.try_wait() == semaphore_raii::Semaphore_RAII::WaitResult::NOT_AQUIRED) {
+    return false;
   }
+  std::osyncstream(std::cout) << id <<
+#ifdef THREAD_MANAGER_TERSE_LOGS
+    ">"
+#else
+    " got "
+#endif
+  << s.id() << "\n";
+  return true;
 }
+
+void ThreadManager::Thread::post_sem(semaphore_raii::Semaphore_RAII s) {
+  s.post();
+  std::osyncstream(std::cout) << id <<
+#ifdef THREAD_MANAGER_TERSE_LOGS
+    "<"
+#else
+    " released "
+#endif
+  << s.id() << "\n";
+}
+
+ThreadManager::Thread::Thread(char id, int initial_work,
+                              std::vector<semaphore_raii::Semaphore_RAII> sems,
+                              atomic_rng::AtomicRng rng)
+    : id(id), sems(sems), rng(rng), work(initial_work) {}
 
 void* ThreadManager::Thread::do_work() {
   std::vector<semaphore_raii::Semaphore_RAII> held;
@@ -68,29 +96,29 @@ void* ThreadManager::Thread::do_work() {
   while (work > 0) {
     bool all_held = false;
     int n_sems_needed = rng.rand_in_range(1, n_sems);
+#ifndef THREAD_MANAGER_TERSE_LOGS
     std::osyncstream(std::cout) << id << " needs " << n_sems_needed << "\n";
+#endif
     std::vector<semaphore_raii::Semaphore_RAII> sems_needed =
         rng.shuffle_n(sems, n_sems_needed);
     while (!all_held) {
       all_held = true;
       for (auto& s : sems_needed) {
-        if (s.try_wait() ==
-            semaphore_raii::Semaphore_RAII::WaitResult::NOT_AQUIRED) {
-          post_all(id, held);
+        if (take_sem(s)) {
+          held.push_back(s);
+        } else {
+          post_all(held);
           held.clear();
           all_held = false;
-          sleep(id, rng);
-          break;
+          sleep_rand();
         }
-        held.push_back(s);
-        std::osyncstream(std::cout) << id << " got " << s.id() << "\n";
       }
     }
     work -= 1;
     std::osyncstream(std::cout) << id << " has " << work << " left\n";
-    post_all(id, held);
+    post_all(held);
     held.clear();
-    sleep(id, rng);
+    sleep_rand();
   }
   pthread_exit(nullptr);
 }

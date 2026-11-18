@@ -10,8 +10,9 @@ void* PThread_RAII::thread_runner(void* ptr) {
 }
 
 PThread_RAII::PThread_RAII(std::unique_ptr<PThread_RAII::Worker> worker) {
-  if (pthread_create(&thread, nullptr, thread_runner, worker.release()) != 0) {
-    throw map_errno::map_errno(errno);
+  int rc = pthread_create(&thread, nullptr, thread_runner, worker.release());
+  if (rc != 0) {
+    throw map_errno::map_errno(rc);
   }
   running = true;
 }
@@ -24,10 +25,21 @@ void PThread_RAII::join() {
   if (!running) {
     return;
   }
-  if (pthread_join(thread, nullptr) != 0) {
-    throw map_errno::map_errno(errno);
+  int rc = pthread_join(thread, nullptr);
+  if (rc != 0) {
+    throw map_errno::map_errno(rc);
   }
   running = false;
+}
+
+PThread_RAII::PThread_RAII(PThread_RAII&& other) noexcept: thread(other.thread), running(std::exchange(other.running, false)) {}
+PThread_RAII& PThread_RAII::operator=(PThread_RAII&& other) noexcept {
+  if (this != &other) {
+    join();
+    thread = other.thread;
+    running = std::exchange(other.running, false);
+  }
+  return *this;
 }
 
 }  // namespace pthread_raii
