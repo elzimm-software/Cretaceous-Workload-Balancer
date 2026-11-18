@@ -17,13 +17,15 @@ class ThreadManager {
     atomic_rng::AtomicRng rng;
     int work;
 
-    void post_all(std::vector<semaphore_raii::Semaphore_RAII>& sems);
-    void sleep_rand();
-    bool take_sem(semaphore_raii::Semaphore_RAII s);
-    void post_sem(semaphore_raii::Semaphore_RAII s);
+    void post_all(
+        const std::vector<semaphore_raii::Semaphore_RAII>& held) const;
+    void sleep_rand() const;
+    [[nodiscard]] bool take_sem(semaphore_raii::Semaphore_RAII s) const;
+    void post_sem(semaphore_raii::Semaphore_RAII s) const;
 
    public:
-    Thread(char id, int initial_work, std::vector<semaphore_raii::Semaphore_RAII> sems,
+    Thread(char id, int initial_work,
+           std::vector<semaphore_raii::Semaphore_RAII> sems,
            atomic_rng::AtomicRng rng);
 
     void* do_work() override;

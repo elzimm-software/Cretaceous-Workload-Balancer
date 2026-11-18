@@ -4,13 +4,12 @@
 #include <pthread.h>
 
 #include <memory>
-#include <utility>
 
 namespace pthread_raii {
 
 class PThread_RAII {
  private:
-  pthread_t thread;
+  pthread_t thread{};
   bool running = false;
 
   static void* thread_runner(void* ptr);

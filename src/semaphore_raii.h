@@ -14,15 +14,15 @@ class Semaphore_RAII {
   int id_;
 
  public:
-  enum WaitResult { AQUIRED, NOT_AQUIRED };
+  enum WaitResult { ACQUIRED, NOT_ACQUIRED };
 
-  Semaphore_RAII(int id);
+  explicit Semaphore_RAII(int id);
 
-  void wait();
-  WaitResult try_wait();
+  void wait() const;
+  [[nodiscard]] WaitResult try_wait() const;
 
-  void post();
-  int id();
+  void post() const;
+  [[nodiscard]] int id() const;
 };
 
 }  // namespace semaphore_raii

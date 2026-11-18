@@ -18,11 +18,11 @@ class AtomicRng {
   std::shared_ptr<shared_state_t> shared_state =
       std::make_shared<shared_state_t>();
 
-  int unlocked_rand(int min, int max);
-  std::vector<size_t> shuffle_indices(size_t len, size_t n);
+  int unlocked_rand(int min, int max) const;
+  std::vector<size_t> shuffle_indices(size_t len, size_t n) const;
 
  public:
-  int rand_in_range(int min, int max);
+  int rand_in_range(int min, int max) const;
 
   template <typename T>
   std::vector<T> shuffle_n(std::vector<T>& a, size_t n) {
