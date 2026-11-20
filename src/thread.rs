@@ -4,31 +4,9 @@ use std::error::Error;
 use std::ffi::CStr;
 use std::fmt::{Display, Formatter};
 use std::ptr::{null, null_mut};
+use crate::libc_err::CError;
 
-#[derive(Debug)]
-pub struct ThreadError {
-    errno: c_int,
-}
-
-impl Display for ThreadError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let err_str = unsafe { CStr::from_ptr(strerror(self.errno)) };
-        write!(f, "{}", err_str.to_string_lossy())
-    }
-}
-
-impl Error for ThreadError {}
-
-impl ThreadError {
-    pub fn from_errno(errno: c_int) -> Self {
-        Self { errno }
-    }
-
-    pub fn into_err<T>(self) -> ThreadResult<T> {
-        Err(self)
-    }
-}
-
+type ThreadError = CError;
 type ThreadResult<T> = Result<T, ThreadError>;
 
 /// # Safety
