@@ -1,4 +1,4 @@
-use std::cell::Cell;
+use std::cell::{Cell, UnsafeCell};
 use std::cmp::PartialEq;
 use crate::libc_err::CError;
 use libc::{sem_init, sem_t, sem_trywait, sem_wait, EAGAIN, sem_post};
@@ -28,7 +28,7 @@ impl TryWaitResult {
 
 
 pub struct AtomicSemaphore {
-    sem: Arc<Cell<sem_t>>,
+    sem: Arc<UnsafeCell<sem_t>>,
     id: SemID,
 }
 
@@ -42,27 +42,27 @@ impl AtomicSemaphore {
             return SemError::from_sys_errno().into_err();
         }
         Ok(Self {
-            sem: Arc::new(Cell::new(unsafe { s.assume_init() })),
+            sem: Arc::new(UnsafeCell::new(unsafe { s.assume_init() })),
             id: id.into(),
         })
     }
 
     pub fn wait(&mut self) -> SemResult<()> {
-        if unsafe {sem_wait(self.sem.as_ptr())} != 0 {
+        if unsafe {sem_wait(self.sem.get())} != 0 {
             return SemError::from_sys_errno().into_err()
         }
         Ok(())
     }
 
     pub fn try_wait(&mut self) -> SemResult<TryWaitResult> {
-        if unsafe {sem_trywait(self.sem.as_ptr())} != 0 {
+        if unsafe {sem_trywait(self.sem.get())} != 0 {
             return SemError::from_sys_errno().into_err_unless(NotAcquired, &[EAGAIN]);
         }
         Ok(Acquired)
     }
 
     pub fn post(&mut self) -> SemResult<()> {
-        if unsafe {sem_post(self.sem.as_ptr())} != 0 {
+        if unsafe {sem_post(self.sem.get())} != 0 {
             return SemError::from_sys_errno().into_err();
         }
         Ok(())
