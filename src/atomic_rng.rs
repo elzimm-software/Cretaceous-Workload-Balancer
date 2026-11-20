@@ -7,6 +7,14 @@ pub struct AtomicRng {
     rng: Arc<Mutex<SmallRng>>,
 }
 
+impl Clone for AtomicRng {
+    fn clone(&self) -> Self {
+        Self {
+            rng: self.rng.clone(),
+        }
+    }
+}
+
 impl AtomicRng {
     pub fn new() -> Self {
         Self {

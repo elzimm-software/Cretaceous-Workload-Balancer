@@ -6,3 +6,8 @@ edition = "2024"
 [dependencies]
 libc = "0.2.191"
 rand = "0.10.4"
+
+[features]
+default = ["do_sleep"]
+do_sleep = []
+terse_logs = []

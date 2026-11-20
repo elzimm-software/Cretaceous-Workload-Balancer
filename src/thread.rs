@@ -1,10 +1,7 @@
-use libc::{c_int, c_void, pthread_detach, pthread_equal, pthread_join, pthread_self};
-use libc::{pthread_exit, pthread_t, strerror};
-use std::error::Error;
-use std::ffi::CStr;
-use std::fmt::{Display, Formatter};
-use std::ptr::{null, null_mut};
 use crate::libc_err::CError;
+use libc::{c_void, pthread_detach, pthread_equal, pthread_join, pthread_self};
+use libc::{pthread_exit, pthread_t};
+use std::ptr::{null, null_mut};
 
 type ThreadError = CError;
 type ThreadResult<T> = Result<T, ThreadError>;
@@ -52,7 +49,7 @@ impl Thread {
     }
 
     pub fn join(self) -> ThreadResult<()> {
-        if unsafe {pthread_equal(pthread_self(), self.pthread)} == 0 {
+        if unsafe { pthread_equal(pthread_self(), self.pthread) } == 0 {
             return Ok(()); // TODO: should this actually return Ok or be its own error
         }
         let rv = unsafe { pthread_join(self.pthread, null_mut()) };
@@ -65,6 +62,6 @@ impl Thread {
 
 impl Drop for Thread {
     fn drop(&mut self) {
-        let _ = unsafe {pthread_detach(self.pthread)};
+        let _ = unsafe { pthread_detach(self.pthread) };
     }
 }
