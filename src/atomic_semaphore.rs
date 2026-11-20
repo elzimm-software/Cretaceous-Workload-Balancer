@@ -26,9 +26,13 @@ impl TryWaitResult {
     }
 }
 
+
 pub struct AtomicSemaphore {
     sem: Arc<Cell<sem_t>>,
     id: SemID,
+}
+
+unsafe impl Sync for AtomicSemaphore {
 }
 
 impl AtomicSemaphore {
