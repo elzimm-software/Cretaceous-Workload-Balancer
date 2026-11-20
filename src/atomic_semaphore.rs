@@ -32,9 +32,6 @@ pub struct AtomicSemaphore {
     id: SemID,
 }
 
-unsafe impl Sync for AtomicSemaphore {
-}
-
 impl AtomicSemaphore {
     pub fn init<T>(id: T) -> SemResult<Self>
     where
